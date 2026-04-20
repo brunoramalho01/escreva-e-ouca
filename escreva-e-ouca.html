@@ -37,10 +37,10 @@ html,body{height:100%;background:var(--bg);font-family:'Nunito',sans-serif;overs
 
 /* ── App ── */
 #app{display:none;flex-direction:column;height:100dvh;max-width:680px;margin:0 auto;padding:10px;gap:8px}
-header{display:flex;align-items:center;justify-content:space-between;padding:2px}
-.app-title{font-family:'Caveat',cursive;font-size:24px;font-weight:700;color:var(--brown)}
-.header-right{display:flex;align-items:center;gap:8px}
-.status-pill{display:flex;align-items:center;gap:7px;background:var(--paper);border-radius:999px;padding:6px 14px;border:1.5px solid var(--line)}
+header{display:flex;align-items:center;justify-content:space-between;padding:2px;gap:8px}
+.app-title{font-family:'Caveat',cursive;font-size:24px;font-weight:700;color:var(--brown);flex-shrink:0}
+.header-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.status-pill{display:flex;align-items:center;gap:7px;background:var(--paper);border-radius:999px;padding:6px 14px;border:1.5px solid var(--line);width:130px;flex-shrink:0}
 .dot{width:10px;height:10px;border-radius:50%;background:#c8b8a8;flex-shrink:0;transition:background .3s}
 .dot.escrevendo{background:#e09030;animation:piscar 1s infinite}
 .dot.processando{background:var(--blue);animation:piscar .4s infinite}
@@ -48,12 +48,13 @@ header{display:flex;align-items:center;justify-content:space-between;padding:2px
 .dot.erro{background:var(--red)}
 .dot.pronto{background:var(--green)}
 @keyframes piscar{0%,100%{opacity:1}50%{opacity:.25}}
-.status-txt{font-size:13px;font-weight:600;color:var(--muted);max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status-txt{font-size:13px;font-weight:600;color:var(--muted);width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .btn-debug-toggle{background:var(--paper);border:1.5px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap}
 .btn-debug-toggle.on{background:#fff8e0;border-color:#d0a020;color:#806010}
 
 /* ── Canvas ── */
-.canvas-wrap{flex:1;background:var(--paper);border-radius:var(--r);border:2px solid var(--line);position:relative;overflow:hidden;box-shadow:0 2px 20px rgba(0,0,0,.07);min-height:0}
+.canvas-wrap{flex:1;background:var(--paper);border-radius:var(--r);border:2px solid var(--line);position:relative;min-height:0}
+canvas{border-radius:calc(var(--r) - 2px)}
 canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;pointer-events:none;transition:opacity .3s}
 .ph-icon{font-size:48px;opacity:.18}
@@ -66,7 +67,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .countdown-num{position:relative;font-family:'Caveat',cursive;font-size:15px;font-weight:700;color:var(--brown);line-height:1}
 
 /* ── Resultado ── */
-.resultado{background:#eef7ef;border:2px solid #a8d8b0;border-radius:var(--r);padding:10px 16px;display:none;flex-shrink:0;max-height:90px;overflow-y:auto}
+.resultado{position:absolute;bottom:10px;left:10px;right:10px;background:rgba(238,247,239,.96);border:2px solid #a8d8b0;border-radius:14px;padding:10px 14px;display:none;max-height:80px;overflow-y:auto;z-index:10;backdrop-filter:blur(4px)}
 .res-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#5a9060;margin-bottom:2px}
 .res-txt{font-family:'Caveat',cursive;font-size:22px;color:#1a3020;line-height:1.3;word-break:break-word}
 
@@ -86,13 +87,15 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 
 /* ── Botões ── */
 .botoes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.botoes .btn-falar{grid-column:1/-1}
 .btn{padding:16px 10px;border-radius:var(--r);border:none;font-family:'Caveat',cursive;font-size:22px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
 .btn:active{transform:scale(.96)}
 .btn-falar{grid-column:1/-1;background:var(--green);color:#fff;box-shadow:0 4px 16px rgba(42,122,72,.3);font-size:26px;padding:18px;display:none}
 .btn-falar.falando{background:var(--red)}
 .btn-falar.show{display:flex}
-.btn-limpar{background:#fff0ed;color:#a02010;border:2px solid #f0c0b8}
 .btn-config{background:#f0f4ff;color:var(--blue);border:2px solid #c0ccf0;font-size:16px}
+.btn-debug-toggle{background:#f5f0e8;color:var(--muted);border:2px solid var(--line);font-size:16px;font-family:'Caveat',cursive}
+.btn-debug-toggle.on{background:#fff8e0;border-color:#d0a020;color:#806010}
 
 /* ── Painel Debug ── */
 #painel-debug{display:none;background:#1a1410;border-radius:var(--r);border:2px solid #3a2a1a;padding:14px;gap:12px;flex-direction:column;max-height:420px;overflow-y:auto}
@@ -147,7 +150,6 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
   <header>
     <span class="app-title">✍️ Escreva e Ouça</span>
     <div class="header-right">
-      <!--<button class="btn-debug-toggle" id="btn-debug-toggle">🐛 Debug</button>-->
       <div class="countdown-badge" id="countdown-badge">
         <svg class="countdown-svg" viewBox="0 0 32 32"><circle class="countdown-track" cx="16" cy="16" r="13"/><circle class="countdown-fill" cx="16" cy="16" r="13" id="countdown-circle"/></svg>
         <span class="countdown-num" id="countdown-num"></span>
@@ -165,11 +167,10 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
       <div class="ph-icon">✍️</div>
       <div class="ph-txt">Escreva aqui com o dedo<br>ou caneta</div>
     </div>
-  </div>
-
-  <div class="resultado" id="resultado">
-    <div class="res-label">📝 Texto reconhecido</div>
-    <div class="res-txt" id="res-txt"></div>
+    <div class="resultado" id="resultado">
+      <div class="res-label">📝 Texto reconhecido</div>
+      <div class="res-txt" id="res-txt"></div>
+    </div>
   </div>
 
   <!-- Painel de Debug -->
@@ -226,12 +227,13 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
     </div>
     <div class="sep"></div>
     <div class="tool-btn" id="btn-borracha">🧹</div>
+    <div class="tool-btn" id="btn-limpar">🗑️</div>
     <div class="f1"></div>
   </div>
   <div class="botoes">
     <button class="btn btn-falar show" id="btn-falar">🔊 Ouvir</button>
-    <button class="btn btn-limpar" id="btn-limpar">🗑️ Limpar</button>
     <button class="btn btn-config" id="btn-config">⚙️ Chave API</button>
+    <button class="btn btn-debug-toggle" id="btn-debug-toggle">🐛 Debug</button>
   </div>
 </div>
 
