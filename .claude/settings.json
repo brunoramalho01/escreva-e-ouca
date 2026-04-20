@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node gerar-icones.js)",
+      "Bash(python -c ' *)",
+      "Bash(echo '<meta http-equiv=\"refresh\" content=\"0;url=escreva-e-ouca.html\">')",
+      "Bash(type nul *)"
+    ]
+  }
+}

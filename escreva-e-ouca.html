@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Escreva e Ouça</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✍️</text></svg>">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7a4a28">
+<meta name="apple-mobile-web-app-title" content="Escreva e Ouça">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Nunito:wght@400;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--bg:#f0ece4;--paper:#fffdf8;--ink:#1a1208;--line:#ede5d8;--brown:#7a4a28;--green:#2a7a48;--red:#c03020;--muted:#9a8878;--blue:#2a5aaa;--r:18px}
+html,body{height:100%;background:var(--bg);font-family:'Nunito',sans-serif;overscroll-behavior:none}
+
+/* ── Config ── */
+#tela-config{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.config-card{background:var(--paper);border-radius:var(--r);border:2px solid var(--line);padding:28px 24px;width:100%;max-width:440px;display:flex;flex-direction:column;gap:16px;box-shadow:0 4px 24px rgba(0,0,0,.1)}
+.config-icon{font-size:48px;text-align:center}
+.config-title{font-family:'Caveat',cursive;font-size:28px;font-weight:700;color:var(--brown);text-align:center}
+.config-desc{font-size:14px;color:#6a5a4a;line-height:1.6;text-align:center}
+.config-steps{background:#f5f0e8;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.config-step{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:#5a4a3a;line-height:1.5}
+.step-num{background:var(--brown);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px}
+.config-steps a{color:var(--blue);font-weight:700;text-decoration:none}
+.key-wrap{display:flex;flex-direction:column;gap:6px}
+.key-label{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.4px}
+.key-input{width:100%;padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:#fff;font-family:'Nunito',sans-serif;font-size:15px;color:var(--ink);outline:none;transition:border .2s}
+.key-input:focus{border-color:var(--brown)}
+.btn-salvar{width:100%;padding:15px;border-radius:14px;border:none;background:var(--brown);color:#fff;font-family:'Caveat',cursive;font-size:22px;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-salvar:hover{background:#5a3a18}
+.config-aviso{font-size:12px;color:var(--muted);text-align:center;line-height:1.5}
+
+/* ── App ── */
+#app{display:none;flex-direction:column;height:100dvh;max-width:680px;margin:0 auto;padding:10px;gap:8px}
+header{display:flex;align-items:center;justify-content:space-between;padding:2px}
+.app-title{font-family:'Caveat',cursive;font-size:24px;font-weight:700;color:var(--brown)}
+.header-right{display:flex;align-items:center;gap:8px}
+.status-pill{display:flex;align-items:center;gap:7px;background:var(--paper);border-radius:999px;padding:6px 14px;border:1.5px solid var(--line)}
+.dot{width:10px;height:10px;border-radius:50%;background:#c8b8a8;flex-shrink:0;transition:background .3s}
+.dot.escrevendo{background:#e09030;animation:piscar 1s infinite}
+.dot.processando{background:var(--blue);animation:piscar .4s infinite}
+.dot.falando{background:var(--green);animation:piscar .7s infinite}
+.dot.erro{background:var(--red)}
+.dot.pronto{background:var(--green)}
+@keyframes piscar{0%,100%{opacity:1}50%{opacity:.25}}
+.status-txt{font-size:13px;font-weight:600;color:var(--muted);max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn-debug-toggle{background:var(--paper);border:1.5px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-debug-toggle.on{background:#fff8e0;border-color:#d0a020;color:#806010}
+
+/* ── Canvas ── */
+.canvas-wrap{flex:1;background:var(--paper);border-radius:var(--r);border:2px solid var(--line);position:relative;overflow:hidden;box-shadow:0 2px 20px rgba(0,0,0,.07);min-height:0}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+.placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;pointer-events:none;transition:opacity .3s}
+.ph-icon{font-size:48px;opacity:.18}
+.ph-txt{font-family:'Caveat',cursive;font-size:22px;color:#c0a888;text-align:center;line-height:1.5;opacity:.8}
+.ring{position:absolute;bottom:12px;right:12px;width:54px;height:54px;display:none}
+.ring svg{transform:rotate(-90deg)}
+.ring circle{fill:none;stroke:var(--brown);stroke-width:4;stroke-dasharray:126;stroke-dashoffset:126;stroke-linecap:round}
+.ring .rnum{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Caveat',cursive;font-size:22px;font-weight:700;color:var(--brown)}
+
+/* ── Resultado ── */
+.resultado{background:#eef7ef;border:2px solid #a8d8b0;border-radius:var(--r);padding:12px 16px;display:none}
+.res-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#5a9060;margin-bottom:4px}
+.res-txt{font-family:'Caveat',cursive;font-size:26px;color:#1a3020;line-height:1.4;word-break:break-word}
+
+/* ── Toolbar ── */
+.toolbar{background:var(--paper);border-radius:var(--r);border:2px solid var(--line);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tg{display:flex;align-items:center;gap:6px}
+.tlabel{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
+.sz{width:44px;height:44px;border-radius:50%;border:2px solid #ddd0c0;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.sz.on{border-color:var(--brown);background:#f5ece0}
+.sz span{border-radius:50%;background:var(--ink);display:block}
+.cor{width:36px;height:36px;border-radius:50%;border:3px solid transparent;cursor:pointer;transition:all .15s}
+.cor.on{border-color:var(--ink);transform:scale(1.18)}
+.sep{width:1px;height:36px;background:var(--line);flex-shrink:0}
+.f1{flex:1}
+.tool-btn{width:44px;height:44px;border-radius:50%;border:2px solid #ddd0c0;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;transition:all .15s}
+.tool-btn.on{border-color:#6060c0;background:#f0f0ff}
+
+/* ── Botões ── */
+.botoes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{padding:16px 10px;border-radius:var(--r);border:none;font-family:'Caveat',cursive;font-size:22px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn:active{transform:scale(.96)}
+.btn-falar{grid-column:1/-1;background:var(--green);color:#fff;box-shadow:0 4px 16px rgba(42,122,72,.3);font-size:26px;padding:18px;display:none}
+.btn-falar.falando{background:var(--red)}
+.btn-falar.show{display:flex}
+.btn-limpar{background:#fff0ed;color:#a02010;border:2px solid #f0c0b8}
+.btn-config{background:#f0f4ff;color:var(--blue);border:2px solid #c0ccf0;font-size:16px}
+
+/* ── Painel Debug ── */
+#painel-debug{display:none;background:#1a1410;border-radius:var(--r);border:2px solid #3a2a1a;padding:14px;gap:12px;flex-direction:column;max-height:420px;overflow-y:auto}
+#painel-debug.show{display:flex}
+.dbg-section{display:flex;flex-direction:column;gap:6px}
+.dbg-title{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#7a6a5a}
+.dbg-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dbg-badge{background:#2a2018;border:1px solid #3a3020;border-radius:8px;padding:4px 10px;font-size:12px;font-family:monospace;color:#d0b888}
+.dbg-badge.ok{border-color:#2a6a38;color:#60d080}
+.dbg-badge.err{border-color:#8a2018;color:#f08070}
+.dbg-badge.warn{border-color:#8a6010;color:#e0b040}
+.dbg-log{background:#120e08;border-radius:10px;padding:10px;font-family:monospace;font-size:11px;color:#c0a878;line-height:1.7;max-height:160px;overflow-y:auto;white-space:pre-wrap;word-break:break-all}
+.dbg-log .log-ok{color:#60d080}
+.dbg-log .log-err{color:#f08070}
+.dbg-log .log-warn{color:#e0b040}
+.dbg-log .log-info{color:#80b8f0}
+.dbg-img-wrap{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.dbg-img-box{display:flex;flex-direction:column;gap:4px}
+.dbg-img-label{font-size:10px;color:#7a6a5a;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.dbg-img{border-radius:8px;border:1px solid #3a2a1a;background:#fff;max-width:200px;max-height:120px;object-fit:contain;display:none}
+.dbg-img.show{display:block}
+.dbg-actions{display:flex;gap:8px;flex-wrap:wrap}
+.dbg-btn{padding:8px 14px;border-radius:10px;border:1.5px solid #3a2a1a;background:#2a1e12;color:#d0b888;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
+.dbg-btn:hover{border-color:#7a5a2a;background:#3a2a16}
+.dbg-btn.running{border-color:#2a5a8a;color:#80b8f0;background:#121e2a}
+.dbg-btn.success{border-color:#2a6a38;color:#60d080;background:#122018}
+.dbg-btn.fail{border-color:#8a2018;color:#f08070;background:#2a1010}
+</style>
+</head>
+<body>
+
+<div id="tela-config">
+  <div class="config-card">
+    <div class="config-icon">✍️</div>
+    <div class="config-title">Escreva e Ouça</div>
+    <div class="config-desc">Precisa de uma chave gratuita do Google Gemini.</div>
+    <div class="config-steps">
+      <div class="config-step"><div class="step-num">1</div><div>Acesse <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a></div></div>
+      <div class="config-step"><div class="step-num">2</div><div>Clique em <strong>"Create API key"</strong> e copie</div></div>
+      <div class="config-step"><div class="step-num">3</div><div>Cole abaixo e toque em <strong>Salvar</strong></div></div>
+    </div>
+    <div class="key-wrap">
+      <div class="key-label">CHAVE GEMINI (AIza...)</div>
+      <input class="key-input" id="key-input" type="password" placeholder="AIzaSy..." autocomplete="off" spellcheck="false">
+    </div>
+    <button class="btn-salvar" id="btn-salvar">Salvar e Começar →</button>
+    <div class="config-aviso">🔒 Fica salva só no seu dispositivo. Grátis até 1.500 usos/dia.</div>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <span class="app-title">✍️ Escreva e Ouça</span>
+    <div class="header-right">
+      <button class="btn-debug-toggle" id="btn-debug-toggle">🐛 Debug</button>
+      <div class="status-pill">
+        <div class="dot pronto" id="dot"></div>
+        <span class="status-txt" id="stxt">Pronto</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="canvas-wrap" id="cwrap">
+    <canvas id="canvas"></canvas>
+    <div class="placeholder" id="ph">
+      <div class="ph-icon">✍️</div>
+      <div class="ph-txt">Escreva aqui com o dedo<br>ou caneta</div>
+    </div>
+    <div class="ring" id="ring">
+      <svg viewBox="0 0 44 44" width="54" height="54"><circle cx="22" cy="22" r="20" id="rc"/></svg>
+      <div class="rnum" id="rn">3</div>
+    </div>
+  </div>
+
+  <div class="resultado" id="resultado">
+    <div class="res-label">📝 Texto reconhecido</div>
+    <div class="res-txt" id="res-txt"></div>
+  </div>
+
+  <!-- Painel de Debug -->
+  <div id="painel-debug">
+    <div class="dbg-section">
+      <div class="dbg-title">Estado da API</div>
+      <div class="dbg-row">
+        <span class="dbg-badge" id="dbg-chave">Chave: —</span>
+        <span class="dbg-badge" id="dbg-modelo">Modelo: —</span>
+        <span class="dbg-badge" id="dbg-img-size">Imagem: —</span>
+      </div>
+    </div>
+    <div class="dbg-section">
+      <div class="dbg-title">Ações de Teste</div>
+      <div class="dbg-actions">
+        <button class="dbg-btn" id="dbg-btn-api">⚡ Testar chave (texto)</button>
+        <button class="dbg-btn" id="dbg-btn-imagem">🖼️ Ver imagem enviada</button>
+        <button class="dbg-btn" id="dbg-btn-modelos">📋 Listar modelos</button>
+        <button class="dbg-btn" id="dbg-btn-limpar-log">🗑️ Limpar log</button>
+      </div>
+    </div>
+    <div class="dbg-section">
+      <div class="dbg-title">Preview da imagem enviada ao Gemini</div>
+      <div class="dbg-img-wrap">
+        <div class="dbg-img-box">
+          <div class="dbg-img-label">Canvas original</div>
+          <img id="dbg-img-original" class="dbg-img" alt="original">
+        </div>
+        <div class="dbg-img-box">
+          <div class="dbg-img-label">Imagem processada (enviada)</div>
+          <img id="dbg-img-processada" class="dbg-img" alt="processada">
+        </div>
+      </div>
+    </div>
+    <div class="dbg-section">
+      <div class="dbg-title">Log</div>
+      <div class="dbg-log" id="dbg-log">Aguardando ações...</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="tg">
+      <span class="tlabel">Traço</span>
+      <div class="sz" id="sz1"><span style="width:5px;height:5px"></span></div>
+      <div class="sz on" id="sz2"><span style="width:10px;height:10px"></span></div>
+      <div class="sz" id="sz3"><span style="width:16px;height:16px"></span></div>
+    </div>
+    <div class="sep"></div>
+    <div class="tg">
+      <span class="tlabel">Cor</span>
+      <div class="cor on" id="cor1" style="background:#111"></div>
+      <div class="cor" id="cor2" style="background:#1a3a80"></div>
+      <div class="cor" id="cor3" style="background:#6a1010"></div>
+    </div>
+    <div class="sep"></div>
+    <div class="tool-btn" id="btn-borracha">🧹</div>
+    <div class="f1"></div>
+  </div>
+  <div class="botoes">
+    <button class="btn btn-falar show" id="btn-falar">🔊 Ouvir</button>
+    <button class="btn btn-limpar" id="btn-limpar">🗑️ Limpar</button>
+    <button class="btn btn-config" id="btn-config">⚙️ Chave API</button>
+  </div>
+</div>
+
+<script type="importmap">{"imports":{"@google/generative-ai":"https://esm.run/@google/generative-ai"}}</script>
+<script type="module">
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const DELAY = 2500;
+const COOLDOWN = 5000; // 15 RPM = 1 req/4s — margem confortável
+const MODELOS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-flash'];
+
+let apiKey = localStorage.getItem('gemini_key') || '';
+let genAI = null, geminiModel = null, modelIdx = 0;
+let desenhando = false, temConteudo = false;
+let espessura = 6, cor = '#111', borracha = false;
+let ultimoTexto = '', falando = false, countTimer = null;
+let ultimaReq = 0;
+const DPR = window.devicePixelRatio || 1;
+
+// Elementos
+const telaConfig = document.getElementById('tela-config');
+const appEl     = document.getElementById('app');
+const keyInput  = document.getElementById('key-input');
+const canvas    = document.getElementById('canvas');
+const ctx       = canvas.getContext('2d', { willReadFrequently: true });
+const ph        = document.getElementById('ph');
+const dotEl     = document.getElementById('dot');
+const stxtEl    = document.getElementById('stxt');
+const ring      = document.getElementById('ring');
+const rc        = document.getElementById('rc');
+const rn        = document.getElementById('rn');
+const resultadoEl = document.getElementById('resultado');
+const resTxt    = document.getElementById('res-txt');
+const btnFalar  = document.getElementById('btn-falar');
+
+// ── Debug ──
+let debugAberto = false;
+const painelDebug   = document.getElementById('painel-debug');
+const btnDebugToggle = document.getElementById('btn-debug-toggle');
+const dbgLog        = document.getElementById('dbg-log');
+const dbgChave      = document.getElementById('dbg-chave');
+const dbgModelo     = document.getElementById('dbg-modelo');
+const dbgImgSize    = document.getElementById('dbg-img-size');
+const dbgImgOriginal   = document.getElementById('dbg-img-original');
+const dbgImgProcessada = document.getElementById('dbg-img-processada');
+
+function log(msg, tipo = 'info') {
+  const ts = new Date().toLocaleTimeString('pt-BR');
+  const cls = tipo === 'ok' ? 'log-ok' : tipo === 'err' ? 'log-err' : tipo === 'warn' ? 'log-warn' : 'log-info';
+  dbgLog.innerHTML += `<span class="${cls}">[${ts}] ${msg}</span>\n`;
+  dbgLog.scrollTop = dbgLog.scrollHeight;
+  console[tipo === 'err' ? 'error' : 'log'](`[Debug] ${msg}`);
+}
+
+function atualizarBadges() {
+  const temChave = !!apiKey && apiKey.length > 10;
+  dbgChave.textContent = temChave ? `Chave: …${apiKey.slice(-6)}` : 'Chave: ausente';
+  dbgChave.className   = 'dbg-badge ' + (temChave ? 'ok' : 'err');
+  dbgModelo.textContent = `Modelo: ${MODELOS[modelIdx]}`;
+  dbgModelo.className   = 'dbg-badge ok';
+}
+
+btnDebugToggle.onclick = () => {
+  debugAberto = !debugAberto;
+  painelDebug.classList.toggle('show', debugAberto);
+  btnDebugToggle.classList.toggle('on', debugAberto);
+  if (debugAberto) atualizarBadges();
+};
+
+document.getElementById('dbg-btn-limpar-log').onclick = () => {
+  dbgLog.innerHTML = '';
+};
+
+// Teste isolado da chave via texto simples (sem imagem)
+document.getElementById('dbg-btn-api').onclick = async () => {
+  const btn = document.getElementById('dbg-btn-api');
+  if (!apiKey) { log('Chave ausente. Salve uma chave primeiro.', 'err'); return; }
+  btn.classList.add('running'); btn.textContent = '⏳ Testando...';
+  atualizarBadges();
+  log(`Testando chave com modelo ${MODELOS[modelIdx]}...`, 'info');
+  try {
+    const m = genAI.getGenerativeModel({ model: MODELOS[modelIdx] });
+    const r = await m.generateContent('Responda apenas: OK');
+    const txt = r.response.text().trim();
+    log(`Resposta: "${txt}"`, 'ok');
+    log(`✅ Chave funcionando! Modelo ${MODELOS[modelIdx]} respondeu.`, 'ok');
+    btn.classList.remove('running'); btn.classList.add('success'); btn.textContent = '✅ OK';
+    setTimeout(() => { btn.className = 'dbg-btn'; btn.textContent = '⚡ Testar chave (texto)'; }, 3000);
+  } catch (err) {
+    const msg = err.message || '';
+    log(`Erro: ${msg}`, 'err');
+    if (msg.includes('429')) log('⚠️ Rate limit atingido. Aguarde 1 minuto.', 'warn');
+    else if (msg.includes('401') || msg.includes('403') || msg.includes('API_KEY')) log('❌ Chave inválida ou sem permissão.', 'err');
+    else if (msg.includes('404')) log('⚠️ Modelo não encontrado. Tente outro.', 'warn');
+    btn.classList.remove('running'); btn.classList.add('fail'); btn.textContent = '❌ Falhou';
+    setTimeout(() => { btn.className = 'dbg-btn'; btn.textContent = '⚡ Testar chave (texto)'; }, 3000);
+  }
+};
+
+// Mostra preview da imagem processada vs original
+document.getElementById('dbg-btn-imagem').onclick = () => {
+  if (!temConteudo) { log('Canvas vazio. Escreva algo primeiro.', 'warn'); return; }
+  const originalUrl = canvas.toDataURL('image/png');
+  dbgImgOriginal.src = originalUrl;
+  dbgImgOriginal.classList.add('show');
+  const base64proc = prepararImagem();
+  if (base64proc) {
+    dbgImgProcessada.src = 'data:image/png;base64,' + base64proc;
+    dbgImgProcessada.classList.add('show');
+    const kb = Math.round(base64proc.length * 0.75 / 1024);
+    dbgImgSize.textContent = `Imagem: ${kb} KB`;
+    dbgImgSize.className = kb > 500 ? 'dbg-badge warn' : 'dbg-badge ok';
+    log(`Preview gerado. Tamanho enviado: ${kb} KB`, 'ok');
+  } else {
+    log('prepararImagem() retornou null — nenhum pixel encontrado.', 'err');
+  }
+};
+
+// Lista modelos disponíveis via fetch direto
+document.getElementById('dbg-btn-modelos').onclick = async () => {
+  const btn = document.getElementById('dbg-btn-modelos');
+  if (!apiKey) { log('Chave ausente.', 'err'); return; }
+  btn.classList.add('running'); btn.textContent = '⏳ Buscando...';
+  log('Consultando modelos disponíveis...', 'info');
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    const data = await res.json();
+    if (!res.ok) { log(`Erro ${res.status}: ${JSON.stringify(data)}`, 'err'); }
+    else {
+      const lista = (data.models || [])
+        .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+        .map(m => m.name.replace('models/', ''));
+      log(`Modelos com generateContent (${lista.length}):\n  ${lista.join('\n  ')}`, 'ok');
+      MODELOS.forEach(nome => {
+        const ok = lista.includes(nome);
+        log(`  ${ok ? '✅' : '❌'} ${nome}`, ok ? 'ok' : 'err');
+      });
+    }
+    btn.classList.remove('running'); btn.classList.add('success'); btn.textContent = '✅ Listado';
+    setTimeout(() => { btn.className = 'dbg-btn'; btn.textContent = '📋 Listar modelos'; }, 3000);
+  } catch (err) {
+    log(`Erro de rede: ${err.message}`, 'err');
+    btn.classList.remove('running'); btn.classList.add('fail'); btn.textContent = '❌ Erro';
+    setTimeout(() => { btn.className = 'dbg-btn'; btn.textContent = '📋 Listar modelos'; }, 3000);
+  }
+};
+
+// ── Gemini ──
+function criarCliente() {
+  if (!apiKey) return;
+  genAI = new GoogleGenerativeAI(apiKey);
+  modelIdx = 0;
+  geminiModel = genAI.getGenerativeModel({ model: MODELOS[modelIdx] });
+}
+
+function salvarChave() {
+  const val = keyInput.value.trim();
+  if (!val || val.length < 10) { alert('Cole uma chave válida (começa com AIza...).'); return; }
+  apiKey = val;
+  localStorage.setItem('gemini_key', val);
+  criarCliente();
+  mostrarApp();
+}
+
+function mostrarApp() {
+  telaConfig.style.display = 'none';
+  appEl.style.display = 'flex';
+  resize();
+  if (window.speechSynthesis) window.speechSynthesis.getVoices();
+}
+
+function mostrarConfig() {
+  keyInput.value = apiKey;
+  telaConfig.style.display = 'flex';
+  appEl.style.display = 'none';
+}
+
+// ── Canvas ──
+function resize() {
+  const wrap = document.getElementById('cwrap');
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  canvas.width = w * DPR; canvas.height = h * DPR;
+  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+  ctx.setTransform(1,0,0,1,0,0); ctx.scale(DPR, DPR);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  linhas(w, h);
+}
+
+function linhas(w, h) {
+  ctx.save(); ctx.strokeStyle = '#ede5d8'; ctx.lineWidth = 1;
+  for (let y = 60; y < h; y += 60) { ctx.beginPath(); ctx.moveTo(14,y); ctx.lineTo(w-14,y); ctx.stroke(); }
+  ctx.restore();
+}
+
+function xy(e) {
+  const r = canvas.getBoundingClientRect();
+  const s = e.touches ? e.touches[0] : e;
+  return { x: s.clientX - r.left, y: s.clientY - r.top };
+}
+
+function ini(e) {
+  e.preventDefault();
+  desenhando = true; temConteudo = true;
+  ph.style.opacity = '0';
+  pararContagem();
+  const p = xy(e);
+  ctx.beginPath(); ctx.moveTo(p.x, p.y);
+  if (borracha) { ctx.globalCompositeOperation = 'destination-out'; ctx.lineWidth = espessura * 3; }
+  else { ctx.globalCompositeOperation = 'source-over'; ctx.strokeStyle = cor; ctx.lineWidth = espessura; }
+  setStatus('escrevendo', 'Escrevendo...');
+}
+
+function mov(e) {
+  e.preventDefault();
+  if (!desenhando) return;
+  const p = xy(e); ctx.lineTo(p.x, p.y); ctx.stroke();
+}
+
+function fim() {
+  if (!desenhando) return;
+  desenhando = false;
+  ctx.globalCompositeOperation = 'source-over';
+  if (temConteudo) iniciarContagem();
+}
+
+canvas.addEventListener('mousedown', ini);
+canvas.addEventListener('mousemove', mov);
+canvas.addEventListener('mouseup', fim);
+canvas.addEventListener('mouseleave', fim);
+canvas.addEventListener('touchstart', ini, {passive:false});
+canvas.addEventListener('touchmove', mov, {passive:false});
+canvas.addEventListener('touchend', fim);
+
+// ── Contagem regressiva ──
+function iniciarContagem() {
+  pararContagem();
+  ring.style.display = 'block';
+  const passos = Math.ceil(DELAY / 80);
+  let p = 0;
+  setStatus('escrevendo', 'Aguarde...');
+  countTimer = setInterval(() => {
+    p++;
+    rc.style.strokeDashoffset = 126 * (1 - p / passos);
+    rn.textContent = Math.ceil((DELAY - p * 80) / 1000) || '';
+    if (p >= passos) { pararContagem(); reconhecer(); }
+  }, 80);
+}
+
+function pararContagem() {
+  if (countTimer) clearInterval(countTimer);
+  countTimer = null;
+  ring.style.display = 'none';
+  rc.style.strokeDashoffset = 126;
+}
+
+// ── Ferramentas ──
+function setStatus(tipo, msg) { dotEl.className = 'dot ' + tipo; stxtEl.textContent = msg; }
+
+function limpar() {
+  pararContagem();
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  linhas(canvas.width / DPR, canvas.height / DPR);
+  temConteudo = false; ultimoTexto = ''; falando = false;
+  ph.style.opacity = '1';
+  resultadoEl.style.display = 'none';
+  btnFalar.classList.remove('falando'); btnFalar.innerHTML = '🔊 Ouvir';
+  setStatus('pronto', 'Pronto');
+  dbgImgOriginal.classList.remove('show');
+  dbgImgProcessada.classList.remove('show');
+  dbgImgSize.textContent = 'Imagem: —';
+  dbgImgSize.className = 'dbg-badge';
+}
+
+// Botões de espessura
+document.getElementById('sz1').onclick = () => { espessura = 3; document.querySelectorAll('.sz').forEach(b=>b.classList.remove('on')); document.getElementById('sz1').classList.add('on'); };
+document.getElementById('sz2').onclick = () => { espessura = 6; document.querySelectorAll('.sz').forEach(b=>b.classList.remove('on')); document.getElementById('sz2').classList.add('on'); };
+document.getElementById('sz3').onclick = () => { espessura = 12; document.querySelectorAll('.sz').forEach(b=>b.classList.remove('on')); document.getElementById('sz3').classList.add('on'); };
+
+// Botões de cor
+document.getElementById('cor1').onclick = () => { cor='#111'; borracha=false; document.getElementById('btn-borracha').classList.remove('on'); document.querySelectorAll('.cor').forEach(b=>b.classList.remove('on')); document.getElementById('cor1').classList.add('on'); };
+document.getElementById('cor2').onclick = () => { cor='#1a3a80'; borracha=false; document.getElementById('btn-borracha').classList.remove('on'); document.querySelectorAll('.cor').forEach(b=>b.classList.remove('on')); document.getElementById('cor2').classList.add('on'); };
+document.getElementById('cor3').onclick = () => { cor='#6a1010'; borracha=false; document.getElementById('btn-borracha').classList.remove('on'); document.querySelectorAll('.cor').forEach(b=>b.classList.remove('on')); document.getElementById('cor3').classList.add('on'); };
+document.getElementById('btn-borracha').onclick = (e) => { borracha = !borracha; e.currentTarget.classList.toggle('on', borracha); document.querySelectorAll('.cor').forEach(b=>b.classList.remove('on')); };
+
+document.getElementById('btn-limpar').onclick = limpar;
+document.getElementById('btn-config').onclick = mostrarConfig;
+document.getElementById('btn-salvar').onclick = salvarChave;
+
+// ── Pré-processamento OCR ──
+function prepararImagem() {
+  const w = canvas.width, h = canvas.height;
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const d = imageData.data;
+
+  let minX = w, minY = h, maxX = 0, maxY = 0, encontrou = false;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (d[(y * w + x) * 4 + 3] > 20) {
+        if (x < minX) minX = x; if (x > maxX) maxX = x;
+        if (y < minY) minY = y; if (y > maxY) maxY = y;
+        encontrou = true;
+      }
+    }
+  }
+  if (!encontrou) return null;
+
+  const pad = 24 * DPR;
+  minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+  maxX = Math.min(w, maxX + pad); maxY = Math.min(h, maxY + pad);
+
+  const cw = maxX - minX, ch = maxY - minY;
+  const escala = ch < 320 ? 320 / ch : 1;
+  const fw = Math.round(cw * escala), fh = Math.round(ch * escala);
+
+  const tmp = document.createElement('canvas');
+  tmp.width = fw; tmp.height = fh;
+  const tc = tmp.getContext('2d');
+  tc.fillStyle = '#ffffff';
+  tc.fillRect(0, 0, fw, fh);
+  tc.drawImage(canvas, minX, minY, cw, ch, 0, 0, fw, fh);
+
+  return tmp.toDataURL('image/png').split(',')[1];
+}
+
+// ── Reconhecer ──
+async function reconhecer() {
+  if (!temConteudo || !geminiModel) { if (!geminiModel) mostrarConfig(); return; }
+
+  const decorrido = Date.now() - ultimaReq;
+  if (decorrido < COOLDOWN) {
+    const resto = COOLDOWN - decorrido;
+    let s = Math.ceil(resto / 1000);
+    setStatus('processando', `Aguarde ${s}s...`);
+    const iv = setInterval(() => { s--; if (s > 0) setStatus('processando', `Aguarde ${s}s...`); else clearInterval(iv); }, 1000);
+    await new Promise(r => setTimeout(r, resto));
+  }
+
+  ultimaReq = Date.now();
+  setStatus('processando', 'Reconhecendo...');
+  if (debugAberto) {
+    atualizarBadges();
+    log(`Enviando para ${MODELOS[modelIdx]}...`, 'info');
+  }
+
+  try {
+    const base64 = prepararImagem();
+    if (!base64) { setStatus('erro', 'Não encontrei escrita. Escreva maior.'); return; }
+
+    if (debugAberto) {
+      const kb = Math.round(base64.length * 0.75 / 1024);
+      dbgImgSize.textContent = `Imagem: ${kb} KB`;
+      dbgImgSize.className = kb > 500 ? 'dbg-badge warn' : 'dbg-badge ok';
+      log(`Imagem pronta: ${kb} KB`, 'info');
+    }
+
+    const result = await geminiModel.generateContent([
+      { inlineData: { data: base64, mimeType: 'image/png' } },
+      { text: 'Esta imagem contém escrita manual feita com o dedo ou caneta em tela digital, sobre fundo branco. Transcreva SOMENTE o texto escrito, em português. Ignore imperfeições dos traços. Sem explicações, sem aspas, sem markdown. Se não houver texto legível responda apenas: [vazio]' }
+    ]);
+    const texto = result.response.text().trim();
+
+    if (debugAberto) log(`Resposta: "${texto}"`, texto === '[vazio]' ? 'warn' : 'ok');
+
+    if (!texto || texto === '[vazio]') { setStatus('erro', 'Não reconheci. Escreva maior.'); return; }
+
+    ultimoTexto = texto;
+    resTxt.textContent = texto;
+    resultadoEl.style.display = 'block';
+    falar(texto);
+
+  } catch (err) {
+    const msg = (err.message || '').toLowerCase();
+    if (debugAberto) log(`Erro: ${err.message}`, 'err');
+
+    if (msg.includes('429') || msg.includes('quota') || msg.includes('exhausted')) {
+      if (modelIdx < MODELOS.length - 1) {
+        modelIdx++;
+        geminiModel = genAI.getGenerativeModel({ model: MODELOS[modelIdx] });
+        if (debugAberto) log(`Rate limit. Tentando ${MODELOS[modelIdx]}...`, 'warn');
+        const espera = 8000;
+        let s = Math.ceil(espera / 1000);
+        const iv = setInterval(() => { s--; if (s > 0) setStatus('processando', `Trocando modelo... ${s}s`); else clearInterval(iv); }, 1000);
+        setStatus('processando', `Trocando modelo... ${s}s`);
+        await new Promise(r => setTimeout(r, espera));
+        reconhecer();
+      } else {
+        setStatus('erro', 'Limite atingido. Aguarde 1 min.');
+        if (debugAberto) log('Todos os modelos atingiram rate limit.', 'err');
+        modelIdx = 0;
+        geminiModel = genAI.getGenerativeModel({ model: MODELOS[0] });
+      }
+    } else if (msg.includes('404') || msg.includes('not found')) {
+      if (modelIdx < MODELOS.length - 1) {
+        modelIdx++;
+        geminiModel = genAI.getGenerativeModel({ model: MODELOS[modelIdx] });
+        if (debugAberto) log(`404 → trocando para ${MODELOS[modelIdx]}`, 'warn');
+        reconhecer();
+      } else { setStatus('erro', 'Modelo indisponível.'); }
+    } else if (msg.includes('api_key') || msg.includes('403') || msg.includes('401') || msg.includes('invalid')) {
+      setStatus('erro', 'Chave inválida.');
+      if (debugAberto) log('Chave inválida ou sem permissão.', 'err');
+      setTimeout(mostrarConfig, 1500);
+    } else {
+      setStatus('erro', 'Erro. Tente novamente.');
+    }
+  }
+}
+
+// ── Fala ──
+function falar(txt) {
+  if (!window.speechSynthesis) { setStatus('erro', 'Use Chrome para a voz funcionar.'); return; }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(txt);
+  u.lang = 'pt-BR'; u.rate = 0.88;
+  function usar() {
+    const vs = window.speechSynthesis.getVoices();
+    const v = vs.find(v=>v.lang==='pt-BR') || vs.find(v=>v.lang.startsWith('pt'));
+    if (v) u.voice = v;
+    u.onstart = () => { falando=true; btnFalar.innerHTML='⏹ Parar'; btnFalar.classList.add('falando'); setStatus('falando','Falando...'); };
+    u.onend = u.onerror = () => { falando=false; btnFalar.innerHTML='🔊 Ouvir novamente'; btnFalar.classList.remove('falando'); setStatus('pronto','Pronto'); };
+    window.speechSynthesis.speak(u);
+  }
+  window.speechSynthesis.getVoices().length===0
+    ? window.speechSynthesis.addEventListener('voiceschanged', usar, {once:true})
+    : usar();
+}
+
+btnFalar.onclick = () => { if (falando) window.speechSynthesis.cancel(); else if (ultimoTexto) falar(ultimoTexto); };
+window.addEventListener('resize', () => { if (appEl.style.display!=='none') resize(); });
+
+// ── Inicializar ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+if (apiKey) { criarCliente(); mostrarApp(); }
+</script>
+</body>
+</html>
